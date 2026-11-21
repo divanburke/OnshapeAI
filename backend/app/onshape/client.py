@@ -54,6 +54,8 @@ class OnshapeClient:
                     if response.is_error:
                         raise OnshapeAPIError(response.status_code, response.text[:1200] or "Onshape request failed.")
                     if response.status_code == 204 or not response.content:
+                        if method != "GET":
+                            self.guard.cache_clear()
                         return None
                     try:
                         data = response.json()
@@ -61,6 +63,8 @@ class OnshapeClient:
                         raise OnshapeAPIError(response.status_code, "Onshape returned a non-JSON response.") from exc
                     if method == "GET" and cache:
                         self.guard.cache_set(cache_key, data)
+                    elif method != "GET":
+                        self.guard.cache_clear()
                     return data
         raise OnshapeAPIError(503, "Onshape did not respond after a bounded retry.")
 
