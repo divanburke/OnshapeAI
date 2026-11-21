@@ -10,7 +10,8 @@ from app.settings import Settings, get_settings
 from app.usage.guard import RequestGuard
 
 router = APIRouter(prefix="/api")
-_guard = RequestGuard()
+_settings = get_settings()
+_guard = RequestGuard(_settings.onshape_max_concurrent_requests, _settings.onshape_get_cache_ttl_seconds)
 
 def get_guard() -> RequestGuard:
     return _guard
