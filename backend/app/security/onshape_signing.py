@@ -29,9 +29,9 @@ def build_onshape_headers(
     nonce = secrets.token_hex(16)
     date_value = format_datetime(datetime.now(timezone.utc), usegmt=True)
     parsed = urlsplit(url)
-    canonical = "\\n".join(
+    canonical = "\n".join(
         [method.upper(), nonce, date_value, content_type, parsed.path or "/", parsed.query]
-    ).lower() + "\\n"
+    ).lower() + "\n"
     digest = hmac.new(
         secret_key.encode("utf-8"), canonical.encode("utf-8"), hashlib.sha256
     ).digest()
