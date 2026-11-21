@@ -15,6 +15,7 @@ export default function App() {
   const [config, setConfig] = useState<Config | null>(null)
   const [documents, setDocuments] = useState<Doc[]>([])
   const [selected, setSelected] = useState('')
+  const [provider, setProvider] = useState<'ollama' | 'cloud'>('ollama')
   const [prompt, setPrompt] = useState('Create a simple parametric mounting bracket with two holes. Explain the modelling steps and dimensions.')
   const [plan, setPlan] = useState('')
   const [usage, setUsage] = useState<Usage | null>(null)
@@ -26,7 +27,7 @@ export default function App() {
   async function refresh() {
     setError(''); setNotice('')
     try {
-      const cfg = await api<Config>('/config'); setConfig(cfg)
+      const cfg = await api<Config>('/config'); setConfig(cfg); setProvider(cfg.ai_provider === 'cloud' ? 'cloud' : 'ollama')
       setUsage(await api<Usage>('/usage'))
       if (cfg.onshape_configured) {
         const raw = await api<unknown>('/onshape/documents')
@@ -46,7 +47,7 @@ export default function App() {
     setBusy(true); setError(''); setNotice(''); setPlan('')
     try {
       const doc = documents.find(d => d.id === selected)
-      const result = await api<{ plan: string; executed: boolean }>('/ai/plan', { method: 'POST', body: JSON.stringify({ prompt, context: doc ? JSON.stringify({ selected_document: doc }) : '' }) })
+      const result = await api<{ plan: string; executed: boolean }>('/ai/plan', { method: 'POST', body: JSON.stringify({ prompt, context: doc ? JSON.stringify({ selected_document: doc }) : '', provider }) })
       setPlan(result.plan); setNotice('Plan generated. No CAD changes have been made.'); setUsage(await api<Usage>('/usage'))
     } catch (e) { setError(e instanceof Error ? e.message : 'AI request failed') } finally { setBusy(false) }
   }
@@ -62,7 +63,7 @@ export default function App() {
       {config?.onshape_configured ? <div className="doc-list">{documents.length ? documents.map((doc, i) => <button key={doc.id || i} className={'doc-item ' + (selected === doc.id ? 'selected' : '')} onClick={() => setSelected(doc.id || '')}><FolderOpen size={15}/><span>{doc.name || 'Untitled document'}</span></button>) : <p className="muted small">No documents returned.</p>}</div> : <p className="muted small side-hint">Add your Onshape API credentials to the backend .env file.</p>}
       <div className="side-bottom"><div className="status-line"><span className={'status-dot ' + (config?.onshape_configured ? 'online' : '')}/>{config?.onshape_configured ? 'Onshape configured' : 'Onshape not connected'}</div><div className="status-line"><span className="status-dot online"/>{config?.ai_provider === 'cloud' ? 'Cloud AI selected' : 'Local AI selected'}</div></div>
     </aside>
-    <main className="main-area"><header className="topbar"><div><span className="crumb">Workspace</span><span className="crumb-sep">/</span><strong>AI CAD Studio</strong></div><div className="top-actions"><span className="model-chip"><Sparkles size={14}/>{config?.ai_provider === 'cloud' ? config.cloud_ai_model : config?.ollama_model || 'Checking AI…'}</span><button className="icon-btn" onClick={() => void refresh()} title="Refresh status"><RefreshCw size={17}/></button><div className="avatar">AI</div></div></header>
+    <main className="main-area"><header className="topbar"><div><span className="crumb">Workspace</span><span className="crumb-sep">/</span><strong>AI CAD Studio</strong></div><div className="top-actions"><select className="provider-select" value={provider} onChange={e => setProvider(e.target.value as 'ollama' | 'cloud')}><option value="ollama">Local Ollama</option><option value="cloud" disabled={!config?.cloud_ai_configured}>Cloud AI</option></select><span className="model-chip"><Sparkles size={14}/>{config?.ai_provider === 'cloud' ? config.cloud_ai_model : config?.ollama_model || 'Checking AI…'}</span><button className="icon-btn" onClick={() => void refresh()} title="Refresh status"><RefreshCw size={17}/></button><div className="avatar">AI</div></div></header>
       <div className="content"><section className="welcome"><div className="eyebrow"><Sparkles size={14}/> AI-POWERED PARAMETRIC DESIGN</div><h1>Design with intent.<br/><span>Build with precision.</span></h1><p>Describe the part you want to create. Your AI assistant will turn the idea into a structured, reviewable CAD plan for Onshape.</p></section>
         {error && <div className="alert error"><AlertCircle size={17}/><span>{error}</span></div>}{notice && <div className="alert success"><Check size={17}/><span>{notice}</span></div>}
         {!config?.onshape_configured && <div className="connect-card"><div className="connect-icon"><Settings2 size={20}/></div><div><strong>Connect your Onshape account</strong><p>Add ONSHAPE_ACCESS_KEY and ONSHAPE_SECRET_KEY to backend/.env, then restart the backend.</p></div></div>}
