@@ -6,6 +6,7 @@ See docs/auth/apikeys/ in the Onshape Developer Documentation.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import secrets
@@ -34,7 +35,7 @@ def build_onshape_headers(
     digest = hmac.new(
         secret_key.encode("utf-8"), canonical.encode("utf-8"), hashlib.sha256
     ).digest()
-    signature = __import__("base64").b64encode(digest).decode("ascii")
+    signature = base64.b64encode(digest).decode("ascii")
 
     return {
         "Date": date_value,
