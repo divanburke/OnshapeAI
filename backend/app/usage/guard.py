@@ -3,14 +3,11 @@
 These counters describe requests made through this running application only;
 they are not a replacement for the authoritative usage display in Onshape.
 """
-
 from __future__ import annotations
-
 import asyncio
 import time
 from collections import defaultdict
 from typing import Any
-
 
 class RequestGuard:
     def __init__(self, max_concurrent: int = 2, cache_ttl: int = 30) -> None:
@@ -32,6 +29,9 @@ class RequestGuard:
 
     def cache_set(self, key: str, value: Any) -> None:
         self._cache[key] = (time.monotonic() + self.cache_ttl, value)
+
+    def cache_clear(self) -> None:
+        self._cache.clear()
 
     def record(self, status_code: int) -> None:
         self._by_status[str(status_code)] += 1
