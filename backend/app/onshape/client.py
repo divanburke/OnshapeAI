@@ -35,6 +35,8 @@ class OnshapeClient:
                 return cached
         access_key = self.settings.onshape_access_key
         secret_key = self.settings.onshape_secret_key.get_secret_value()
+        if not access_key or not secret_key:
+            raise OnshapeAPIError(503, "Onshape API credentials are not configured. Add them to backend/.env and restart the backend.")
         async with self.guard.semaphore:
             async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=False) as client:
                 for attempt in range(2):
